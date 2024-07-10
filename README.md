@@ -43,13 +43,17 @@ pip install GeneralAgent
 export OPENAI_API_KEY=your_openai_api_key
 ```
 
+如果你正在使用代理网站获取OPENAI token, 请配置`OPENAI_API_BASE`参数
 
+```bash
+export OPENAI_API_BASE=your_token_url_base
+```
 
 或者在代码中配置
 
 ```python
 from GeneralAgent import Agent
-agent = Agent('You are a helpful agent.', api_key='sk-xxx')
+agent = Agent('You are a helpful agent.', api_key='sk-xxx', base_url='https://api.xxx')
 ```
 
 

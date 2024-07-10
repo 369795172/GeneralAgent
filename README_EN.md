@@ -43,11 +43,17 @@ Refer to the [.env.example](./.env.example) file to configure the key or other p
 export OPENAI_API_KEY=your_openai_api_key
 ```
 
+If you are using a proxy website to obtain the OPENAI token, please configure the OPENAI_API_BASE parameter as follows:
+
+```bash
+export OPENAI_API_BASE=your_token_url_base
+```
+
 Or configure in the code
 
 ```python
 from GeneralAgent import Agent
-agent = Agent('You are a helpful agent.', api_key='sk-xxx')
+agent = Agent('You are a helpful agent.', api_key='sk-xxx', base_url='https://api.xxx')
 ```
 
 
