@@ -14,12 +14,12 @@ class PythonInterpreter(Interpreter):
     """
     Python Interpreter: run python code in the interpreter. Not same namespace with the agent & Can Only run synchronous code
     """
-    output_match_pattern = '```python\n(.*?)\n```'
+    output_match_pattern = '```python\n#run code\n(.*?)\n```'
     agent = None
 
     python_prompt_template = """
-# Run python
-- the code will be executed automatically when the code block is closed
+# Run python code
+- format: ```python\n#run code\nyour code\n```. Only this format will be executed.
 - Every time you output code, you need to reimport the required library. Each execution only shares variables and functions, without including libraries.
 - Available libraries: {{python_libs}}
 - The following functions can be used in code (already implemented and imported for you):
@@ -28,8 +28,17 @@ class PythonInterpreter(Interpreter):
 ```
 - Example:
 ```python
+#run code
 result = 1 + 1
 result
+```
+
+# Show python code
+- format: ```python\n#show code\nyour code\n```. This format will be displayed.
+- Example:
+```python
+#show code
+print('Hello, world!')
 ```
 """
 
@@ -136,10 +145,12 @@ result
             # 出现了自我调用，则判断一下层级，如果层级为1，则停止
             if self.agent is not None:
                 stop = self.agent.run_level != 1
-                print('run_level:', self.agent.run_level, 'stop:', stop)
                 self.agent.python_run_result = result
             if result is None:
                 result = output.getvalue()
+            else:
+                if output.getvalue().strip() != '':
+                    result = output.getvalue() + '\n' + str(result)
             return str(result), stop
         except Exception as e:
             logging.exception(e)

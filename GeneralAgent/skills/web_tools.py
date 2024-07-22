@@ -17,28 +17,6 @@ def google_search(query: str) -> str:
     response = requests.request("POST", url, headers=headers, data=payload)
     json_data = json.loads(response.text)
     return json.dumps(json_data, ensure_ascii=True, indent=4)
-    # result = json.loads(response.text)
-
-    # # price: $1/1000 queries
-    # from GeneralAgent import skills
-    # skills._skill_consume('web_search', 0.001 * 2)
-
-    # # 提取organic的title、link、snippet
-    # the_list = []
-    # for item in result['organic']:
-    #     try:
-    #         the_list.append({'title': item.get('title', ''), 'link': item.get('link', ''), 'snippet': item.get('snippet', '')})
-    #     except:
-    #         pass
-    # result = json.dumps(the_list, ensure_ascii=True, indent=4)
-    # # print(result)
-    # from GeneralAgent import skills
-    # messages = [
-    #     {'role': 'system', 'content': f'background: {result[:30000]}'},
-    #     {'role': 'user', 'content': f'{query}'},
-    # ]
-    # result = skills.llm_inference(messages)
-    # return result
 
 
 def web_search(query: str) -> str:
@@ -112,12 +90,11 @@ def _web_driver_open(url: str, wait_time=10, scroll_to_bottom=False):
     import time
 
     # 开发环境使用本地chrome浏览器，生产环境使用远程chrome浏览器
-    if os.environ.get('RUN_MODE', None) == 'prod':
-        selenium_grid_url = os.environ.get('CHROME_GRID_URL', "http://localhost:4444/wd/hub") 
+    CHROME_GRID_URL = os.environ.get('CHROME_GRID_URL', None)
+    if CHROME_GRID_URL is not None:
         chrome_options = Options()
-        driver = webdriver.Remote(command_executor=selenium_grid_url, options=chrome_options)
+        driver = webdriver.Remote(command_executor=CHROME_GRID_URL, options=chrome_options)
     else:
-        print('use local chrome browser')
         # Setup chrome options
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Ensure GUI is off
@@ -227,4 +204,3 @@ def web_get_text(url:str, wait_time=10, scroll_to_bottom=True):
 
 if __name__ == '__main__':
     result = google_search('成都 人口')
-    print(result)

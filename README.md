@@ -8,22 +8,21 @@
 GeneralAgent是一个Python原生的Agent框架，旨在将大型语言模型 与 Python 无缝集成。
 
 
-
 **主要特性**
 
-* **工具调用**：GeneralAgent 不依赖大模型的 function call，通过python代码解释器来调用工具。
-* **序列化**：GeneralAgent 支持序列化，包括记忆和python执行状态，随用随启
-* **自我调用**：GeneralAgent通过自我调用和堆栈记忆，最小化大模型的调用次数，来高效处理复杂任务。更多详情请见我们的 [论文](./docs/paper/General_Agent__Self_Call_And_Stack_Memory.pdf)
-* **部署服务**：使用 [AgentServer(即将开源)](https://github.com/CosmosShadow/AgentServer) 部署 Agent，快速为大规模用户提供服务。
+* 工具调用：GeneralAgent 不依赖大模型的 function call，通过python代码解释器来调用工具
 
+* 序列化：GeneralAgent 支持序列化，包括记忆和python执行状态，随用随启
 
+* 快速配置角色、函数和知识库，创建Agent
 
-使用GeneralAgent，您可以：
+* 执行稳定的复杂业务流程，协调多个Agent完成任务
 
-* 快速配置角色、函数和知识库，创建Agent。
-* 执行稳定的复杂业务流程，协调多个Agent完成任务。
-* 使用 `agent.run` 函数执行命令并产生结构化输出，超越简单的文本响应。
-* 使用 `agent.user_input` 函数与用户进行动态交互。
+* 使用 `agent.run` 函数执行命令并产生结构化输出，超越简单的文本响应
+
+* 使用 `agent.user_input` 函数与用户进行动态交互
+
+* 自我调用(探索)：GeneralAgent通过自我调用和堆栈记忆，最小化大模型的调用次数，来高效处理复杂任务。更多详情请见我们的 [论文](./docs/paper/General_Agent__Self_Call_And_Stack_Memory.pdf)
 
 
 
@@ -41,6 +40,8 @@ pip install GeneralAgent
 
 ```bash
 export OPENAI_API_KEY=your_openai_api_key
+# export OPENAI_API_BASE=your_openai_base_url
+# using with not openai official server or using other OpenAI API formate LLM server such as deepseek, zhipu(chatglm),qwen, etc.
 ```
 
 如果你正在使用代理网站获取OPENAI token, 请配置`OPENAI_API_BASE`参数
@@ -67,7 +68,7 @@ from GeneralAgent import Agent
 
 agent = Agent('你是一个AI助手')
 while True:
-    query = input('请输入: ')
+    query = input()
     agent.user_input(query)
     print('-'*50)
 ```
@@ -92,15 +93,6 @@ def get_weather(city: str) -> str:
 
 agent = Agent('你是一个天气小助手', functions=[get_weather])
 agent.user_input('成都天气怎么样？')
-
-# 输出
-# ```python
-# city = "成都"
-# weather_info = get_weather(city)
-# weather_info
-# ```
-# 成都的天气是晴天。
-# 请问还有什么我可以帮忙的吗？
 ```
 
 
@@ -163,10 +155,10 @@ shutil.rmtree(workspace)
 
 
 
-### 工作流
+### 写小说
 
 ```python
-# 工作流: 写小说
+# 写小说
 from GeneralAgent import Agent
 from GeneralAgent import skills
 
@@ -225,7 +217,26 @@ print(enhanced_story)
 
 
 
+
+### 多模态输入
+
+user_input 的 input 参数，和 run 的 command 参数，支持字符串或者数组。
+
+数组时支持多模态，格式为最简模式: ['text_content', {'image': 'path/to/image'}, ...]
+
+```python
+# 支持多模态: 图片输入
+from GeneralAgent import Agent
+
+agent = Agent('You are a helpful assistant.')
+agent.user_input(['what is in the image?', {'image': '../docs/images/self_call.png'}])
+```
+
+
+
 ### 大模型切换
+
+#### OpenAI SDK
 
 得益于GeneralAgent框架不依赖大模型厂商的 function call 能力实现了函数调用，可以无缝切换不同的大模型实现相同的能力。
 
@@ -241,8 +252,32 @@ agent.user_input('介绍一下成都')
 详情见: [examples/8_multi_model.py](./examples/8_multi_model.py)
 
 
+#### Azure OpenAI 
+
+```python
+from GeneralAgent import Agent
+
+# api_key = os.getenv("OPENAI_API_KEY")
+# base_url = os.getenv("OPENAI_API_BASE")
+api_key = '8ef0b4df45e444079cd5xxx' # Azure API Key or use OPENAI_API_KEY environment variable
+base_url = 'https://xxxx.openai.azure.com/' # Azure API Base URL or use OPENAI_API_BASE environment variable
+model = 'azure_cpgpt4' # azure_ with model name, e.g. azure_cpgpt4
+# azure api_version is default to '2024-05-01-preview'. You can set by environment variable AZURE_API_VERSION
+
+agent = Agent('You are a helpful assistant', api_key=api_key, base_url=base_url, model=model)
+while True:
+    query = input('Please input your query:')
+    agent.user_input(query)
+    print('-'*50)
+```
+
+
+#### OneAPI
 
 如果其他大模型不支持OpenAI SDK，可以通过 https://github.com/songquanpeng/one-api 来支持。
+
+
+#### 自定义大模型
 
 或者重写 GeneralAgent.skills 中 llm_inference 函数来使用其他大模型。
 
@@ -329,6 +364,43 @@ agent.run(f'用户问题: \n{question}\n\n搜索引擎结果: \n{google_result}\
 ### 更多
 
 更多例子请见 [examples](./examples)
+
+
+
+## API
+
+### 基础使用
+
+**Agent.\__init__(self, role: str, workspace: str = None, functions: List[Callable] = [], knowledge_files: List[str] = None)**
+
+初始化一个Agent实例。
+
+- role (str): Agent的角色。
+- workspace (str, 可选): Agent的工作空间。默认值为None（不序列化）。如果指定了目录，Agent会自动保存状态并在下次初始化时重新加载。
+- functions (List[Callable], 可选): Agent可以调用的函数列表。
+- knowledge_files (List[str], 可选): Agent知识库文件路径列表。
+
+**Agent.run(self, command: Union[str, List[Union[str, Dict[str, str]]]], return_type: str = str, display: bool = False)**
+
+执行命令并返回指定类型的结果。
+
+- command (Union[str, List[Union[str, Dict[str, str]]]]): 要执行的命令。例如：'describe chengdu' 或 ['what is in image?', {'image': 'path/to/image'}]。
+- return_type (str, 可选): 结果的返回类型。默认值为str。
+- display (bool, 可选): 是否显示LLM生成的中间内容。默认值为False。
+
+**Agent.user_input(self, input: Union[str, List[Union[str, Dict[str, str]]]])**
+
+响应用户输入，并始终显示LLM生成的中间内容。
+
+- input (Union[str, List[Union[str, Dict[str, str]]]]): 用户输入。
+
+**Agent.clear(self)**
+
+清除Agent的状态。
+
+### 高级使用
+
+[ ] # TODO
 
 
 

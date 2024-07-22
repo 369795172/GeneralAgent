@@ -9,21 +9,19 @@ GeneralAgent is a Python-native Agent framework that aims to seamlessly integrat
 
 **Main features**
 
-* **Tool call**: GeneralAgent does not rely on the function call of large models, but calls tools through the python code interpreter.
-
-* **Serialization**: GeneralAgent supports serialization, including memory and python execution status, and is ready to use
-
-* **Self-call**: GeneralAgent minimizes the number of calls to large models through self-call and stack memory to efficiently handle complex tasks. For more details, please see our [paper](./docs/paper/General_Agent__Self_Call_And_Stack_Memory.pdf)
-
-* **Deployment service**: Use [AgentServer (to be open source)](https://github.com/CosmosShadow/AgentServer) to deploy Agents and quickly provide services to large-scale users.
-
-With GeneralAgent, you can:
-
 * Quickly configure role, functions, and knowledge bases to create Agent.
 
 * Execute stable and complex business processes and coordinate multiple Agents to complete tasks.
+
 * Use the `agent.run` function to execute commands and produce structured output, beyond simple text responses.
+
 * Use the `agent.user_input` function to dynamically interact with the user.
+
+* Tool call: GeneralAgent does not rely on the function call of large models, but calls tools through the python code interpreter.
+
+* Serialization: GeneralAgent supports serialization, including memory and python execution status, and is ready to use
+
+* Self-call(experimental): GeneralAgent minimizes the number of calls to large models through self-call and stack memory to efficiently handle complex tasks. For more details, please see our [paper](./docs/paper/General_Agent__Self_Call_And_Stack_Memory.pdf)
 
 
 
@@ -41,6 +39,8 @@ Refer to the [.env.example](./.env.example) file to configure the key or other p
 
 ```bash
 export OPENAI_API_KEY=your_openai_api_key
+# export OPENAI_API_BASE=your_openai_base_url
+# using with not openai official server or using other OpenAI API formate LLM server such as deepseek, zhipu(chatglm),qwen, etc.
 ```
 
 If you are using a proxy website to obtain the OPENAI token, please configure the OPENAI_API_BASE parameter as follows:
@@ -165,10 +165,10 @@ import shutil
 shutil.rmtree(workspace)
 ```
 
-### Workflow
+### Write a novel
 
 ```python
-# Workflow: Write a novel
+# Write a novel
 from GeneralAgent import Agent
 from GeneralAgent import skills
 
@@ -225,7 +225,26 @@ print(enhanced_story)
 
 
 
+### Multimodal input
+
+The input parameter of user_input and the command parameter of run support strings or arrays.
+
+Multimodal is supported when the array is used. The format is the simplest mode: ['text_content', {'image': 'path/to/image'}, ...]
+
+```python
+# Multimodal support: Image input
+from GeneralAgent import Agent
+
+agent = Agent('You are a helpful assistant.')
+agent.user_input(['what is in the image?', {'image': '../docs/images/self_call.png'}])
+```
+
+
+
+
 ### LLM switching
+
+#### OpenAI SDK
 
 Thanks to the GeneralAgent framework's independent function call capability of large model vendors, it can seamlessly switch between different large models to achieve the same capabilities.
 
@@ -240,7 +259,32 @@ agent.user_input('Introduce Chengdu')
 
 For details, see: [examples/8_multi_model.py](./examples/8_multi_model.py)
 
+#### Azure OpenAI 
+
+```python
+from GeneralAgent import Agent
+
+# api_key = os.getenv("OPENAI_API_KEY")
+# base_url = os.getenv("OPENAI_API_BASE")
+api_key = '8ef0b4df45e444079cd5xxx' # Azure API Key or use OPENAI_API_KEY environment variable
+base_url = 'https://xxxx.openai.azure.com/' # Azure API Base URL or use OPENAI_API_BASE environment variable
+model = 'azure_cpgpt4' # azure_ with model name, e.g. azure_cpgpt4
+# azure api_version is default to '2024-05-01-preview'. You can set by environment variable AZURE_API_VERSION
+
+agent = Agent('You are a helpful assistant', api_key=api_key, base_url=base_url, model=model)
+while True:
+    query = input('Please input your query:')
+    agent.user_input(query)
+    print('-'*50)
+```
+
+
+#### One API
+
 If other large models do not support OpenAI SDK, they can be supported through https://github.com/songquanpeng/one-api.
+
+
+#### Custom large model
 
 Or rewrite the llm_inference function in GeneralAgent.skills to use other large models.
 
@@ -330,6 +374,48 @@ agent.run(f'User question: \n{question}\n\nSearch engine results: \n{google_resu
 ### More
 
 For more examples, see [examples](./examples)
+
+
+## API
+
+### Basic Usage
+
+**Agent.\__init__(self, role: str, workspace: str = None, functions: List[Callable] = [], knowledge_files: List[str] = None)**
+
+Initializes an Agent instance.
+
+- role (str): The role of the agent.
+- workspace (str, optional): The agent's workspace. Default is None (not serialized). If a directory is specified, the agent will automatically save the agent's state and reload it upon the next initialization.
+- functions (List[Callable], optional): A list of functions that the agent can call.
+- knowledge_files (List[str], optional): A list of file paths for the agent's knowledge base.
+
+
+**Agent.run(self, command: Union[str, List[Union[str, Dict[str, str]]]], return_type: str = str, display: bool = False)**
+
+Executes a command and returns the result in the specified return type.
+
+- command (Union[str, List[Union[str, Dict[str, str]]]]): The command to execute. Examples: 'describe chengdu' or ['what is in image?', {'image': 'path/to/image'}].
+- return_type (str, optional): The return type of the result. Default is str.
+- display (bool, optional): Whether to display the intermediate content generated by the LLM. Default is False.
+
+
+**Agent.user_input(self, input: Union[str, List[Union[str, Dict[str, str]]]])**
+
+Responds to user input and always displays the intermediate content generated by the LLM.
+
+- input (Union[str, List[Union[str, Dict[str, str]]]]): The user input.
+
+
+**Agent.clear(self)**
+
+Clears the agent's state.
+
+
+
+### Advanced Usage
+
+[] # TODO
+
 
 
 

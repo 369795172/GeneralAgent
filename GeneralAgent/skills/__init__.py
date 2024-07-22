@@ -8,6 +8,18 @@ def default_output_callback(token):
     else:
         print('\n', end='', flush=True)
 
+
+def default_check(check_content=None):
+    show = '确认 | 继续 (回车, yes, y, 是, ok) 或者 直接输入你的想法\n'
+    if check_content is not None:
+        show = f'{check_content}\n\n{show}'
+    response = input(show)
+    if response.lower() in ['', 'yes', 'y', '是', 'ok']:
+        return None
+    else:
+        return response
+
+
 class Skills:
     __instance = None
 
@@ -30,7 +42,8 @@ class Skills:
         """
         assert money_type in ['dollar', 'rmb']
         try:
-            self._local_skill_consume(method_name, amount, money_type)
+            if self._load_skill_comsume is not None:
+                self._local_skill_consume(method_name, amount, money_type)
         except Exception as e:
             logging.exception(e)
             logging.warn('Skill _local_skill_consume function not found')
@@ -43,7 +56,7 @@ class Skills:
 
     def __getattr__(self, name):
         if name.startswith('_'):
-            return object.__getattr__(self, name)
+            return None
         else:
             return self._get_func(name)
         
@@ -56,7 +69,9 @@ class Skills:
             return fun
         if fun is not None:
             return fun
-        print('Function {} not found'.format(name))
+        if name == 'output':
+            return default_output_callback
+        logging.error('Function {} not found'.format(name))
         return None
     
     def __init__(self):
@@ -64,6 +79,7 @@ class Skills:
         self._remote_funs = {}
         self._load_local_funs()
         self._local_funs['input'] = input
+        self._local_funs['check'] = default_check
         self._local_funs['print'] = default_output_callback
         self._local_funs['output'] = default_output_callback
 
